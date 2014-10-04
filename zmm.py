@@ -1,5 +1,5 @@
-#!/usr/bin/python2
-
+#!/usr/bin/env python2
+import ConfigParser
 import os
 import argparse
 import subprocess
@@ -26,6 +26,8 @@ known_modules = {
 _suffixes = ['bytes', 'KiB', 'MiB', 'GiB', 'TiB', 'EiB', 'ZiB']
 
 def file_size(size):
+    if size <= 0:
+        return 'zero bytes'
     # determine binary order in steps of size 10 
     # (coerce to int, // still returns a float)
     order = int(math.log(size, 2) / 10)
@@ -51,6 +53,16 @@ def createParser ():
 	parser.add_argument('-l', '--local', action = 'store_true', help = 'store cache in current working dir')
 	return parser
 
+def createConfig ():
+	config = ConfigParser.RawConfigParser()
+	if os.path.isfile(os.path.join(global_cache_dir, 'repos.cfg')):
+		config.read(os.path.join(global_cache_dir, 'repos.cfg'))
+		if not config.has_section('repos'):
+			config.add_section('repos')
+	else:
+		config.add_section('repos')
+	return config
+
 def installZephir ():
 	cwd = os.getcwd()
 	result = subprocess.call(['git', 'clone', 'https://github.com/phalcon/zephir.git', zephir_installation_dir])
@@ -73,7 +85,7 @@ def installZephir ():
 		print "errors occured during json-c installation"
 		sys.exit(1)
 	
-	if subprocess.call([os.path.join(zephir_installation_dir, 'install'), '-c']) == 0:
+	if os.chdir(zephir_installation_dir) == None and subprocess.call([os.path.join(zephir_installation_dir, 'install'), '-c']) == 0:
 		print "zephir compiled and installated."
 	else:
 		print "errors occured during zephir installation"
@@ -102,7 +114,8 @@ if __name__ == "__main__":
 	if string.find(namespace.module, '_') == 0:
 		if namespace.module == '_cache':
 			for file in os.listdir(global_cache_dir):
-				print file + ' ' + file_size(dirsize(os.path.join(global_cache_dir, file)))
+				if os.path.isdir(os.path.join(global_cache_dir, file)):
+					print file + ' ' + file_size(dirsize(os.path.join(global_cache_dir, file)))
 	else:
 		if namespace.repo == None:
 			if namespace.module in known_modules:
@@ -110,6 +123,13 @@ if __name__ == "__main__":
 			else:
 				print "this module has no known repo"
 				sys.exit(1)
+
+		# check that repo different
+		config = createConfig()
+		if config.has_option('repos', namespace.module):
+			if not (config.get('repos', namespace.module) == namespace.repo):
+				if (not namespace.local) and os.path.isdir(dir):
+					shutil.rmtree(dir)
 
 		if os.path.isdir(dir):
 			print "updating ..."
@@ -122,6 +142,10 @@ if __name__ == "__main__":
 			print "failed"
 			sys.exit(1)
 
+		config.set('repos', namespace.module, namespace.repo)
+		with open(os.path.join(global_cache_dir, 'repos.cfg'), 'wb') as configfile:
+			config.write(configfile)
+
 		# version
 		print "version is {}".format(namespace.version)
 		subprocess.call(['git', '-C', dir, 'checkout', namespace.version])
@@ -132,4 +156,3 @@ if __name__ == "__main__":
 		else:
 			print "installation failed"
 			sys.exit(1)
-
