@@ -26,13 +26,10 @@ You can select which version of module is needed and use another repo for known 
 2. install *shell* module version *0.0.2*
 > sudo ./zmm.py shell 0.0.2
 
-3. install *shell* module from other repo than cached in zmm version *0.0.4*
+3. install *shell* module from other repo than cached in zmm version *0.0.4* (in this case version is required)
 > sudo ./zmm.py shell 0.0.4 git@github.com:forked/php-shell.git
 
-4. install *shell* module from other repo than cached in zmm
-> sudo ./zmm.py shell git@github.com:forked/php-shell.git
-
-5. list all cached modules
+4. list all cached modules
 > ./zmm.py _cache
 
 Additional functions:

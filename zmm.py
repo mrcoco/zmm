@@ -148,7 +148,10 @@ if __name__ == "__main__":
 
 		# version
 		print "version is {}".format(namespace.version)
-		subprocess.call(['git', '-C', dir, 'checkout', namespace.version])
+		# save from hitting the leg
+		if subprocess.call(['git', '-C', dir, 'checkout', namespace.version]) != 0:
+			print "This version is not present in repo"
+			sys.exit(1)
 		# start building
 		os.chdir(dir)
 		if subprocess.call(['zephir', 'build']) == 0:
