@@ -6,74 +6,39 @@ It handles process of zephir/json-c installation too, so do not do this manually
 You can select which version of module is needed and use another repo for known module or specify repo for unknown module.
 
 #### Help
-	usage: zmm.py [-h] [-v] {install,cache,clear,zephir} ...
+There's 4 basic actions:
 
-	zmm - Zephir Modules Manager. It handles all work: installing zephir, cloning
-	& compiling & installation module.
+1. **install**
+2. **update**
+3. **remove**
+4. **list**
 
-	optional arguments:
-	  -h, --help            show this help message and exit
-	  -v, --version         show program's version number and exit
+## Install usage:
 
-	Actions:
-	  {install,cache,clear,zephir}
-	    cache               show global cache
-	    clear               clears global cache
+> sudo python zmm.py install **module_name** [**module_version**] [**module_repo**]
 
-Examples:
+Installs a module. Default versio: master.
 
-1. clear global cache
-> sudo ./zmm.py clear
+> sudo python zmm.py install --zephir [**zephir_version**]
 
-2. show global cache
-> ./zmm.py cache
+Installs Zephir. Default version: master.
 
-#### Install
-	usage: zmm.py install [-h] [-s {local,global}] module [version] [repo]
+## Update usage:
 
-	install or update zephir module
+> sudo python zmm.py update **module_name** [**module_version**]
 
-	positional arguments:
-	  module                name of zephir module to install
-	  version               version of this module
-	  repo                  repo for this module
+Updates a module. Default version: master.
 
-	optional arguments:
-	  -h, --help            show this help message and exit
-	  -s {local,global}, --storage {local,global}
-	                        change storage for this module's cache
+> sudo python zmm.py update --zephir [**zephir_version**]
 
-Examples:
+Updates Zephir. Default version: master.
 
-1. install *shell* module
-> sudo ./zmm.py install shell
+## Remove usage:
 
-2. install *shell* module version *0.0.2*
-> sudo ./zmm.py install shell 0.0.2
+> sudo python zmm.py remove **module_name**
 
-3. install *shell* module from other repo than cached in zmm version *0.0.4* (in this case version is required)
-> sudo ./zmm.py install shell 0.0.4 git@github.com:forked/php-shell.git
+Removes a module.
 
-#### Zephir
-	usage: zmm.py zephir [-h] [-r] [-u] [-v VERSION] [-j VERSION]
+> sudo python zmm.py remove --zephir
 
-	Reinstall or update zephir installation.
-
-	optional arguments:
-	  -h, --help            show this help message and exit
-	  -r, --reinstall       force zephir reinstallation
-	  -u, --update          runs zephir update process
-	  -v VERSION, --version VERSION
-	                        zephir version to install or update (if -u present)
-	                        (default: master)
-	  -j VERSION, --json_c_version VERSION
-	                        json-c version to install or update (if -u present)
-	                        (default: master)
-
-Examples:
-
-1. update to a specific version
-> sudo ./zmm.py zephir -u -v 0.5.2
-
-2. update zephir to a freshen version
-> sudo ./zmm.py zephir -u -v master
+Removes Zephir.

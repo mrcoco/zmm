@@ -9,20 +9,20 @@ import sys
 import math
 import shutil
 
-version = '1.1.0'
+version = '1.2.0'
 zephir_version = "master"
 jsonc_version = "master"
 
 if platform.system() == "Windows":
-        zephir_installation_dir = "C:\zmm\zephir"
+	zephir_installation_dir = "C:\zmm\zephir"
 else:
-    zephir_installation_dir = '/usr/local/src/zephir'
+	zephir_installation_dir = '/usr/local/src/zephir'
 
 if platform.system() == "Windows":
-    global_cache_dir = "C:\zmm\cache"
+	global_cache_dir = "C:\zmm\cache"
 else:
-    global_cache_dir = '/var/cache/zmm/modules'
-    
+	global_cache_dir = '/var/cache/zmm/modules'
+
 known_modules = {
 	"shell": "https://github.com/wapmorgan/php-shell.git",
 	"elastica": "https://github.com/ariskemper/celastica.git",
@@ -37,72 +37,73 @@ known_modules = {
 _suffixes = ['bytes', 'KiB', 'MiB', 'GiB', 'TiB', 'EiB', 'ZiB']
 
 def file_size(size):
-    if size <= 0:
-        return 'zero bytes'
-    # determine binary order in steps of size 10 
-    # (coerce to int, // still returns a float)
-    order = int(math.log(size, 2) / 10)
-    # format file size
-    # (.4g results in rounded numbers for exact matches and max 3 decimals, 
-    # should never resort to exponent values)
-    return '{:.4g} {}'.format(size / (1 << (order * 10)), _suffixes[order])
+	if size <= 0:
+		return 'zero bytes'
+	# determine binary order in steps of size 10
+	# (coerce to int, // still returns a float)
+	order = int(math.log(size, 2) / 10)
+	# format file size
+	# (.4g results in rounded numbers for exact matches and max 3 decimals,
+	# should never resort to exponent values)
+	return '{:.4g} {}'.format(size / (1 << (order * 10)), _suffixes[order])
 
 def dirsize(start_path = '.'):
-    total_size = 0
-    for dirpath, dirnames, filenames in os.walk(start_path):
-        for f in filenames:
-            fp = os.path.join(dirpath, f)
-            total_size += os.path.getsize(fp)
-    return total_size
+	total_size = 0
+	for dirpath, dirnames, filenames in os.walk(start_path):
+		for f in filenames:
+			fp = os.path.join(dirpath, f)
+			total_size += os.path.getsize(fp)
+	return total_size
 
 def createParser ():
 	parser = argparse.ArgumentParser(
-            description = '''zmm - Zephir Modules Manager. It handles all work: installing zephir, cloning & compiling & installation module.'''
-            )
+		description = '''zmm - Zephir Modules Manager. It handles all work: installing zephir, cloning & compiling & installation module.'''
+		)
 	parser.add_argument('-v', '--version', action = 'version', version = '%(prog)s {}'.format(version))
 	subparsers = parser.add_subparsers(dest='command',
-                title = 'Actions')
+		title = 'Actions')
 
-	install_parser = subparsers.add_parser('install', description = 'install or update zephir module')
-	install_parser.add_argument('module', help = 'name of zephir module to install')
-	install_parser.add_argument('version', help = 'version of this module', nargs = '?', default = 'master')
+	install_parser = subparsers.add_parser('install', help = 'install zephir or zephir module')
+	install_parser.add_argument('module', help = 'name of zephir module to install', nargs = '?')
+	install_parser.add_argument('version', help = 'version of this module (default: master)', nargs = '?', default = 'master')
 	install_parser.add_argument('repo', help = 'repo for this module', nargs = '?')	
-	install_parser.add_argument('-s', '--storage', choices=['local', 'global'], help = "change storage for this module's cache", default = 'global')
+	install_parser.add_argument('--zephir', action = 'store_true')
+	install_parser.add_argument('--replace', action = 'store_true')
 
-	cache_parser = subparsers.add_parser('cache', help = 'show global cache')
-	clear_parser = subparsers.add_parser('clear', help = 'clears global cache')
+	update_parser = subparsers.add_parser('update', help = 'update zephir or zephir module')
+	update_parser.add_argument('module', help = 'name of zephir module to update', nargs = '?')
+	update_parser.add_argument('version', help = 'version of this module (default: master)', nargs = '?', default = 'master')
+	update_parser.add_argument('--zephir', action = 'store_true')
 
-        zephir_parser = subparsers.add_parser('zephir', description = 'Reinstall or update zephir installation.')
-        zephir_parser.add_argument('-r', '--reinstall', help = 'force zephir reinstallation', action = 'store_true')
-	zephir_parser.add_argument('-u', '--update', help = 'runs zephir update process', action = 'store_true')
-	zephir_parser.add_argument('-v', '--version', help = 'zephir version to install or update (if -u present) (default: ' + zephir_version + ')', metavar = 'VERSION', default = zephir_version)
-	zephir_parser.add_argument('-j', '--json_c_version', help = 'json-c version to install or update (if -u present) (default: ' + jsonc_version + ')', metavar = 'VERSION', default = jsonc_version)
+	list_parser = subparsers.add_parser('list', help = 'show installed modules')
+	remove_parser = subparsers.add_parser('remove', help = 'remove zephir or zephir module')
+	remove_parser.add_argument('module', help = 'name of zephir module to remove', nargs = '?')
+	remove_parser.add_argument('--zephir', action = 'store_true')
+
+#	zephir_parser = subparsers.add_parser('zephir', description = 'Reinstall or update zephir installation.')
+#	zephir_parser.add_argument('-r', '--reinstall', help = 'force zephir reinstallation', action = 'store_true')
+#	zephir_parser.add_argument('-u', '--update', help = 'runs zephir update process', action = 'store_true')
+#	zephir_parser.add_argument('-v', '--version', help = 'zephir version to install or update (if -u present) (default: ' + zephir_version + ')', metavar = 'VERSION', default = zephir_version)
+#	zephir_parser.add_argument('-j', '--json_c_version', help = 'json-c version to install or update (if -u present) (default: ' + jsonc_version + ')', metavar = 'VERSION', default = jsonc_version)
 	
 	return parser
 
-def createConfig ():
+def openConfig ():
 	config = ConfigParser.RawConfigParser()
-	if os.path.isfile(os.path.join(global_cache_dir, 'repos.cfg')):
-		config.read(os.path.join(global_cache_dir, 'repos.cfg'))
-		if not config.has_section('repos'):
-			config.add_section('repos')
-	else:
-		config.add_section('repos')
+	if os.path.isfile(os.path.join(global_cache_dir, 'db.cfg')):
+		config.read(os.path.join(global_cache_dir, 'db.cfg'))
 	return config
 
-def installModule (namespace):
-	# install zephir
-	if not os.path.isdir(zephir_installation_dir):
-		installZephir(zephir_version, jsonc_version)
-
-	# check cache dir
-	if namespace.storage == 'local':
-		dir = os.path.join(os.getcwd(), namespace.module)
-	else:
-		dir = os.path.join(global_cache_dir, namespace.module)
-		if not os.path.isdir(global_cache_dir):
-			os.makedirs(global_cache_dir)
+def saveConfig (config):
+	with open(os.path.join(global_cache_dir, 'db.cfg'), 'wb') as configfile:
+		config.write(configfile)
 	
+
+def checkModule (namespace):
+	"""
+	Checks that module exists in precached modules list.
+	Checks that module is not already installed.
+	"""
 	if namespace.repo == None:
 		if namespace.module in known_modules:
 			namespace.repo = known_modules[namespace.module]
@@ -110,69 +111,99 @@ def installModule (namespace):
 		print "this module has no known repo"
 		sys.exit(1)
 
-	# check that repo different
-	config = createConfig()
-	if config.has_option('repos', namespace.module):
-		if not (config.get('repos', namespace.module) == namespace.repo):
-			if namespace.storage == 'global' and os.path.isdir(dir):
-				shutil.rmtree(dir)
+	if os.path.isdir(os.path.join(global_cache_dir, namespace.module)):
+		# the same repo - propose update
+		out, err = subprocess.Popen(['git', '-C', os.path.join(global_cache_dir, namespace.module), 'config', '--get', 'remote.origin.url'], stdout=subprocess.PIPE).communicate()
+		if out.strip() == namespace.repo:
+			print "this module already installed. You should use _update_ command."
+			sys.exit(1)
+		# another repo - propose using --replace flag
+		else:
+			print "you trying install another module with this name. Try using --replace flag to replace it with new module".format(namespace.module)
+			sys.exit(1)
 
-	if os.path.isdir(dir):
-		print "updating ..."
-		result = subprocess.call(['git', '-C', dir, 'pull', 'origin', 'master'])
-	else:
-		print "cloning ..."
-		result = subprocess.call(['git', 'clone', namespace.repo, dir])
+def _updateDb (namespace):
+	# store version and repo in db
+	config = openConfig()
+	if config.has_section(namespace.module):
+		config.remove_section(namespace.module)
 
-	if result != 0:
-		print "failed"
+	config.add_section(namespace.module)
+	config.set(namespace.module, 'version', namespace.version)
+	config.set(namespace.module, 'repo', namespace.repo)
+	saveConfig(config)
+
+
+def installModule (namespace):
+	checkModule(namespace)
+	dir = os.path.join(global_cache_dir, namespace.module)
+	# delete module if flag --replace passed
+	if os.path.isdir(dir) and namespace.replace:
+		shutil.rmtree(dir)
+	_updateDb(namespace)
+
+	if subprocess.call(['git', 'clone', namespace.repo, dir]) != 0:
+		print "Could not clone repo"
 		sys.exit(1)
 
-	config.set('repos', namespace.module, namespace.repo)
-	with open(os.path.join(global_cache_dir, 'repos.cfg'), 'wb') as configfile:
-            config.write(configfile)
-
-	# version
-	print "version is {}".format(namespace.version)
-	# save from hitting the leg
 	if subprocess.call(['git', '-C', dir, 'checkout', namespace.version]) != 0:
-		print "This version is not present in repo"
-		sys.exit(1)
-	# start building
-	os.chdir(dir)
-	if subprocess.call(['zephir', 'build']) == 0:
-		print "{} {} installation successful.".format(namespace.module, namespace.version)
-	else:
-		print "installation failed"
+		print "Could not select this version: {}".format(namespace.version)
 		sys.exit(1)
 
-def installZephir (zephir_version, jsonc_version):
+	if os.chdir(dir) == None and subprocess.call(['zephir', 'build']) == 0:
+		print "Sucessfully installed"
+		print namespace.module + ' ' + namespace.version
+		sys.exit(0)
+
+def updateModule (namespace):
+	dir = os.path.join(global_cache_dir, namespace.module)
+	if not os.path.isdir(dir):
+		print "Can not update a non-installed module. Try using install command."
+		sys.exit(1)
+	os.chdir(dir)
+	if subprocess.call(['git', 'pull', 'origin', 'master']) != 0:
+		print "Could not updat repo"
+		sys.exit(1)
+
+	config = openConfig()
+	config.set(namespace.module, 'version', namespace.version)
+	saveConfig(config)
+
+	if subprocess.call(['git', 'checkout', namespace.version]) != 0:
+		print "Could not select this version: {}".format(namespace.version)
+		sys.exit(1)
+
+	if subprocess.call(['zephir', 'build']) == 0:
+		print "updated ({})".format(namespace.version)
+		sys.exit(0)
+
+def removeModule (namespace):
+	dir = os.path.join(global_cache_dir, namespace.module)
+	if os.path.isdir(dir):
+		shutil.rmtree(dir)
+	config = openConfig()
+	if config.has_section(namespace.module):
+		config.remove_section(namespace.module)
+	saveConfig(config)
+
+def installZephir (zephir_version):
 	cwd = os.getcwd()
-	result = subprocess.call(['git', 'clone', 'https://github.com/phalcon/zephir.git', zephir_installation_dir])
+	print "connecting with https://github.com/phalcon/zephir.git"
+	if not os.path.isdir(zephir_installation_dir):
+		result = subprocess.call(['git', 'clone', '--quiet', 'https://github.com/phalcon/zephir.git', zephir_installation_dir])
+	else:
+		os.chdir(zephir_installation_dir)
+		result = subprocess.call(['git', 'pull', '--quiet', 'origin', 'master'])
 	if result != 0:
 		print "zephir installation failed"
 		sys.exit(1);
 	os.chdir(zephir_installation_dir)
-	subprocess.call(['git', 'checkout', zephir_version])
-	subprocess.call(['git', 'submodule', 'update', '--init'])
-	subprocess.call(['git', '-C', os.path.join(zephir_installation_dir, 'json-c'), 'checkout', jsonc_version])
-	_compileZephir()
-	os.chdir(cwd)
-
-def updateZephir ():
-	cwd = os.getcwd()
-	os.chdir(zephir_installation_dir)
-	if subprocess.call(['git', 'pull']) != 0:
-		print "Error occured"
+	if subprocess.call(['git', 'checkout', zephir_version]) != 0:
+		print "Could not fetch {} version of zephir".format(zephir_version)
 		sys.exit(1)
-	if subprocess.call(['git', 'checkout', namespace.version]) != 0:
-		print "This version in not present in the repo"
-		sys.exit(1)
-	subprocess.call(['git', 'submodule', 'update', '--init'])
-	subprocess.call(['git', '-C', os.path.join(zephir_installation_dir, 'json-c'), 'checkout', namespace.json_c_version])
+	subprocess.call(['git', 'submodule', '--quiet', 'update', '--init'])
 	_compileZephir()
-	os.chdir(cwd)
-	
+	sys.exit(0)
 
 def _compileZephir ():
 	"""
@@ -196,60 +227,68 @@ def _compileZephir ():
 		sys.exit(1)
 
 def listCache ():
-    for file in os.listdir(global_cache_dir):
-        if os.path.isdir(os.path.join(global_cache_dir, file)):
-            print file + ' ' + file_size(dirsize(os.path.join(global_cache_dir, file)))
+	for file in os.listdir(global_cache_dir):
+		if os.path.isdir(os.path.join(global_cache_dir, file)):
+			print file + ' ' + file_size(dirsize(os.path.join(global_cache_dir, file)))
 
 def clearCache ():
-    for file in os.listdir(global_cache_dir):
-        if os.path.isdir(os.path.join(global_cache_dir, file)):
-            shutil.rmtree(os.path.join(global_cache_dir, file))
+	for file in os.listdir(global_cache_dir):
+		if os.path.isdir(os.path.join(global_cache_dir, file)):
+			shutil.rmtree(os.path.join(global_cache_dir, file))
 
 def onerror(func, path, exc_info):
-    """
-    Error handler for ``shutil.rmtree``.
+	"""
+	Error handler for ``shutil.rmtree``.
 
-    If the error is due to an access error (read only file)
-    it attempts to add write permission and then retries.
+	If the error is due to an access error (read only file)
+	it attempts to add write permission and then retries.
 
-    If the error is for another reason it re-raises the error.
+	If the error is for another reason it re-raises the error.
 
-    Usage : ``shutil.rmtree(path, onerror=onerror)``
-    """
-    import stat
-    if not os.access(path, os.W_OK):
-        # Is the error an access error ?
-        os.chmod(path, stat.S_IWUSR)
-        func(path)
-    else:
-        raise
+	Usage : ``shutil.rmtree(path, onerror=onerror)``
+	"""
+	import stat
+	if not os.access(path, os.W_OK):
+		# Is the error an access error ?
+		os.chmod(path, stat.S_IWUSR)
+		func(path)
+	else:
+		raise
 
 if __name__ == "__main__":
 	parser = createParser()
 	namespace = parser.parse_args();
 
-        if namespace.command == 'install':
-		installModule(namespace)
-        elif namespace.command == 'zephir':
-		# check zephir installation
-		if not os.path.isdir(zephir_installation_dir):
-			print "zephir is not installed"
-			print "run installation of any module to install it"
-			sys.exit(1)
-		elif namespace.reinstall:
-			print "reinstalling previous version..."
-			shutil.rmtree(zephir_installation_dir, onerror = onerror)
-			installZephir(namespace.version, namespace.json_c_version)
-		elif namespace.update:
-			print "updating zephir ..."
-			updateZephir(namespace.version, namespace.json_c_version)
+	if namespace.command == 'install':
+		if namespace.zephir:
+			installZephir(namespace.module if namespace.module != None else namespace.version) # some hack for actual version value
+		elif namespace.module != None:
+			installModule(namespace)
 		else:
-			print "Zephir already installed (try using --reinstall or --update options)"
+			print "You should add module name or --zephir flag"
+			sys.exit(1)
+	elif namespace.command == 'update':
+		if namespace.zephir:
+			installZephir(namespace.module if namespace.module != None else namespace.version) # some hack for actual version value
+		elif namespace.module != None:
+			updateModule(namespace)
+		else:
+			print "You should add module name or --zephir flag"
+			sys.exit(1)
+	elif namespace.command == 'remove':
+		if namespace.zephir:
+			if shutil.rmtree(zephir_installation_dir):
+				print "Zephir deleted"
+				sys.exit(0)
+		else:
+			removeModule(namespace)
+			print "{} removed".format(namespace.module)
 			sys.exit(0)
-	elif namespace.command == 'cache':
-		listCache()
-	elif namespace.command == 'clear':
-		clearCache()
-        else:
-		print "Choice command"
-		sys.exit(1)
+	elif namespace.command == 'list':
+		config = openConfig()
+		i = 0
+		for section_name in config.sections():
+			i+=1
+			print "{}. {}".format(i, section_name)
+			print "Repo: {}".format(config.get(section_name, 'repo'))
+			print "Version: {}".format(config.get(section_name, 'version'))
